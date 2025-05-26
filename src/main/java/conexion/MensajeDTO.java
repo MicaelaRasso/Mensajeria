@@ -1,16 +1,17 @@
 package conexion;
 
+import modelo.Contacto;
 import modelo.Usuario;
 
 public class MensajeDTO extends ContenidoC {
 	private String mensaje;
-	private Usuario receptor;
+	private Contacto receptor;
 	
 
-	public MensajeDTO(Usuario emisor, String mensaje, Usuario receptor) {
+	public MensajeDTO(Usuario emisor, String mensaje, Contacto receptor) {
 		super(emisor);
-		this.setMensaje(mensaje);
-		this.setReceptor(receptor);
+		this.mensaje = mensaje;
+		this.receptor = receptor;
 	}
 
 	public String getMensaje() {
@@ -21,11 +22,11 @@ public class MensajeDTO extends ContenidoC {
 		this.mensaje = mensaje;
 	}
 
-	public Usuario getReceptor() {
+	public Contacto getReceptor() {
 		return receptor;
 	}
 
-	public void setReceptor(Usuario receptor) {
+	public void setReceptor(Contacto receptor) {
 		this.receptor = receptor;
 	}
 

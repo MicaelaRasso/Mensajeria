@@ -15,7 +15,11 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
+import modelo.Contacto;
+import modelo.Conversacion;
+import modelo.Mensaje;
 import modelo.Sistema;
+import modelo.Usuario;
 import vista.VentanaAgregarContacto;
 import vista.VentanaInicio;
 import vista.VentanaPrincipal;
@@ -32,8 +36,6 @@ public class Controlador implements ActionListener{
 		super();
 		this.vInicio = vInicio;
 		this.vPrincipal = vPrincipal;
-		
-		// Deshabilita el botón de enviar si el área de texto está vacía
 		this.vPrincipal.getBtnEnviar().setEnabled(false);  // estado inicial
 
 		this.vPrincipal.getTxtrEscribirMensaje().getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
@@ -150,10 +152,8 @@ public class Controlador implements ActionListener{
 
 	private void registroInicial() {
 		String nombre = vInicio.getTfNombre().getText();
-		//String IP = vInicio.getTfIP().getText(); //HAY QUE AGREGAR EL CONTENEDOR
-		String IP = "127.0.0.1";
 		if (!(nombre.equals(""))) {
-			Usuario usuario = new Usuario(nombre, IP); 
+			Usuario usuario = new Usuario(nombre,"127.0.0.1"); 
 			this.sistema = new Sistema(usuario,this);
 			try {							
 				this.sistema.registrarUsuario();
@@ -338,11 +338,17 @@ public class Controlador implements ActionListener{
         }	
 	
 	}
+
+	public void actualizarVentanaPrincipal() {
+        nuevoMensaje();
+        cargarListaDeContactos();
+        cargarListaDeConversaciones();
+	}
 	
 	public void contactoAgregado(Contacto c) {
 	    SwingUtilities.invokeLater(() -> {
 	        cargarListaDeContactos();
-	        cargarConversaciones();  // también para que aparezca la nueva conversación
+	        cargarListaDeConversaciones();  // también para que aparezca la nueva conversación
 	        mensajeAviso("Contacto agregado", "Se ha agregado el contacto " + c.getNombre());
 	    });
 	}
@@ -394,4 +400,5 @@ public class Controlador implements ActionListener{
 			);
 
 	}
+
 }

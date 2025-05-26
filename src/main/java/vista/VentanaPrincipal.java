@@ -25,6 +25,8 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import controlador.Controlador;
+import modelo.Mensaje;
+import modelo.Usuario;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -198,11 +200,11 @@ public class VentanaPrincipal extends JFrame {
         });
     }
 
-	private JPanel crearPanelMensaje(Mensaje m, Usuario usuario) {
+	public JPanel crearPanelMensaje(Mensaje m, Usuario usuario) {
 	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 	    String fechaFormateada = m.getFechaYHora().format(formatter);
 
-	    boolean esMio = m.getEmisor().equals(usuario.getUsuario().getNombre());
+	    boolean esMio = m.getEmisor().equals(usuario.getNombre());
 
 	    // Colores personalizados
 	    Color cFondo = new Color(232, 218, 239); // lila claro
