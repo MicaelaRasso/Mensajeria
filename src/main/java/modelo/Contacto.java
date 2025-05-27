@@ -1,11 +1,10 @@
 package modelo;
 
-public class Contacto {
-    private String nombre;
+public class Contacto extends Usuario {
     private Conversacion conversacion;
 
     public Contacto(String nombre) {
-        this.nombre = nombre;
+    	super(nombre);
     }
 
     // Getters y Setters
@@ -17,16 +16,8 @@ public class Contacto {
         this.conversacion = conversacion;
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
     @Override
     public String toString() {
-        return nombre;
+        return super.toString();
     }
 }

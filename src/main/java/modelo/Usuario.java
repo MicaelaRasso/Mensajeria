@@ -8,6 +8,11 @@ public class Usuario {
         this.nombre = "";
         this.IP = "";
     }
+    
+    public Usuario(String nombre) {
+        this.nombre = nombre;
+        this.IP = ""; // IP se puede establecer más tarde
+    }
 
     public Usuario(String nombre, String IP) {
         this.nombre = nombre;

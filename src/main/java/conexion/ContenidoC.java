@@ -6,7 +6,7 @@ public class ContenidoC extends Contenido {
 	private Usuario emisor;
 
 	public ContenidoC(Usuario emisor) {
-		this.setEmisor(emisor);
+		this.emisor = emisor;
 	}
 
 	public Usuario getEmisor() {

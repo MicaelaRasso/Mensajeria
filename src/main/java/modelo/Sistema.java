@@ -1,115 +1,150 @@
 package modelo;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Observer;
 
+import conexion.Paquete;
+import conexion.PuertoDTO;
+import conexion.ListaServidoresDTO;
 import conexion.ConexionMonitor;
 import conexion.ConexionServidor;
 import conexion.MensajeDTO;
-import conexion.Paquete;
 import conexion.UsuarioDTO;
 import controlador.Controlador;
+import excepciones.ContactoNoExisteException;
 
+/**
+ * Orquesta el flujo del cliente: recibe paquetes de conexiones,
+ * procesa la lógica de negocio y delega envíos a las conexiones.
+ */
 public class Sistema {
+    private String monitorHost;
+    private int monitorPort;
+    private String serverHost;
+    private int serverPort;
+
     private Usuario usuario;
-    private ConexionMonitor conexionM;
-    private ConexionServidor conexionS;
-    private HashMap<String, Contacto> agenda = new HashMap<>();
-    private ArrayList<Conversacion> conversaciones = new ArrayList<>();
     private Controlador controlador;
 
+    // Módulos de conexión, autogestionan hilos y envíos
+    private ConexionMonitor conexionMonitor;
+    private ConexionServidor conexionServidor;
+
+    // Estado de la aplicación
+    private HashMap<String, Contacto> agenda = new HashMap<>();
+    private ArrayList<Conversacion> conversaciones = new ArrayList<>();
+
     public Sistema(Usuario usuario, Controlador controlador) {
-    	this.usuario = usuario;
-    	this.controlador = controlador;
-        this.conexionM = new ConexionMonitor(this);
-        this.conexionM.start();
+        this.usuario = usuario;
+        this.controlador = controlador;
+        this.monitorHost = ConfigLoader.host;
+        this.monitorPort = ConfigLoader.port;
+
+        // Inicializa conexión con monitor (envía petición internamente)
+        conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
+        conexionMonitor.start();
     }
 
-    public void registrarUsuario() throws IOException {
-        Paquete paquete = new Paquete("RegistarU", new UsuarioDTO(this.usuario,""));
-        
-        conexionS.enviar(paquete);
-        //manejar respuesta del servidor al registrar usuario
+
+	/**
+     * Callback desde ConexionMonitor al recibir cualquier paquete.
+     * Sólo procesa y delega acciones, no envía directamente.
+     */
+    public void recibePaqueteDelMonitor(Paquete paquete) {
+        switch (paquete.getOperacion()) {
+            case "ObtenerSAR":
+                PuertoDTO dto = (PuertoDTO) paquete.getContenido();
+                this.serverPort = dto.getPuerto();
+                this.serverHost = dto.getAddress();
+
+                // Configura y arranca la conexión al servidor
+                conexionServidor = new ConexionServidor(this, serverHost, serverPort);
+                conexionServidor.start();
+                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario, "")));
+                break;
+        }
     }
 
-    public void enviarMensaje(String contenido, Contacto contacto) throws IOException {
-    	Paquete paquete = new Paquete("EnviarM", new MensajeDTO(this.usuario, contenido, contacto));
-
-
-        
+    /**
+     * Callback desde ConexionServidor al recibir paquetes.
+     */
+    public void recibePaqueteDeServidor(Paquete paquete) {
+        switch (paquete.getOperacion()) {
+            case "RegistrarUR":
+            	
+                controlador.verificarRegistro(((UsuarioDTO)paquete.getContenido()).getRespuesta());
+                break;
+            case "AgregarCR":
+				if (paquete.getContenido() == null) { //No existe el contacto
+					throw new ContactoNoExisteException("El contacto no existe en el servidor.");
+					
+				} else {
+					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
+					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
+					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
+					controlador.nuevoContacto(nuevoContacto);
+				}
+				break;
+            case "RecibirM":
+                recibirMensaje((MensajeDTO) paquete.getContenido());
+                break;
+        }
     }
-    /*
-     pre: solo llegan paquetes de con mensajes (operacion recibirM) 
-    */
-    public synchronized void recibirMensaje(Paquete paquete) {
-    	
-    	MensajeDTO contenido = (MensajeDTO) paquete.getContenido();
-    	String nombre = contenido.getEmisor().getNombre();
-    	String mensaje = contenido.getMensaje();
-        LocalDateTime fechaYHoraStr = contenido.getFechaYHora();
 
-        System.out.println("Mensaje recibido");
+    private void recibirMensaje(MensajeDTO mensaje) {
+        Usuario emisor = mensaje.getEmisor();
+        String texto = mensaje.getMensaje();
+        LocalDateTime fechahora = mensaje.getFechaYHora();
 
-        Contacto cont;
-        Conversacion conv;
-        if (agenda.containsKey(nombre)) {
-            cont = agenda.get(nombre);
-            conv = cont.getConversacion();
-        } else {
-            cont = new Contacto(nombre);
-            agenda.put(nombre, cont);
+        Contacto cont = agenda.computeIfAbsent(emisor.getNombre(), Contacto::new);
+        Conversacion conv = cont.getConversacion();
+        if (conv == null) {
             conv = new Conversacion(cont);
             cont.setConversacion(conv);
             conversaciones.add(conv);
-            System.out.println("Nueva conversación creada para: " + nombre);
         }
-        conv.recibirMensaje(mensaje, fechaYHoraStr, cont);
-        controlador.actualizarVentanaPrincipal();
+        conv.recibirMensaje(texto, fechahora, cont);
+        controlador.notificarMensaje(cont);
     }
 
-    public void consultaPorContacto(String nombreContacto) throws IOException {
-    	Paquete paquete = new Paquete("AgregarC", new UsuarioDTO(this.usuario,""));
-    	
-	        proxyClient.send(request);
-		} catch (IOException | InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        
-    }
-
-    public void crearConversacion(Contacto contacto) {
-        if (!conversaciones.contains(contacto.getConversacion())) {
-            Conversacion conv = new Conversacion(contacto);
-            contacto.setConversacion(conv);
-            conversaciones.add(conv);
+    /**
+     * Solicita enviar un mensaje: delega a la conexión.
+     */
+    public void enviarMensaje(Contacto contacto, String texto) {
+        if (conexionServidor != null) {
+            conexionServidor.enviarMensaje(contacto.getNombre(), texto);
         }
     }
 
-    public ArrayList<Mensaje> cargarMensajesDeConversacion(Contacto contacto) {
-        Conversacion conv = contacto.getConversacion();
-        if (conv != null) {
-            return conv.getMensajes();
+    /**
+     * Agrega un contacto remoto: delega a la conexión.
+     */
+    public void agregarContacto(String nombreContacto) {
+        if (conexionServidor != null) {
+        	Paquete paquete = new Paquete("AgregarC", new UsuarioDTO(new Contacto(nombreContacto)));
+            conexionServidor.agregarContacto(paquete);
         }
-        return new ArrayList<>();
     }
 
-    public HashMap<String, Contacto> getAgenda() {
-        return agenda;
-    }
-    
-    public Contacto getContacto(String nombre) {
-		return agenda.get(nombre);
-	}
-
-    public ArrayList<Conversacion> getConversaciones() {
-        return conversaciones;
+    /**
+     * Finaliza ambas conexiones.
+     */
+    public void detener() {
+        if (conexionMonitor != null) conexionMonitor.stop();
+        if (conexionServidor != null) conexionServidor.stop();
     }
 
     public Usuario getUsuario() {
-        return usuario;
-    }
+		return usuario;
+	}
+    
+    public HashMap<String, Contacto> getAgenda() {
+		return agenda;
+	}
+
+	public ArrayList<Conversacion> getConversaciones() {
+		return conversaciones;
+	}
+	
 }

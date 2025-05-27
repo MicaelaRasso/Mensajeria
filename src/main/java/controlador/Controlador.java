@@ -155,40 +155,35 @@ public class Controlador implements ActionListener{
 		if (!(nombre.equals(""))) {
 			Usuario usuario = new Usuario(nombre,"127.0.0.1"); 
 			this.sistema = new Sistema(usuario,this);
-			try {							
-				this.sistema.registrarUsuario();
-				vInicio.setVisible(false);
-				vPrincipal.setVisible(true);
-			}catch(IOException e){
-				if(e.equals("en uso")) {
-					mensajeError("ERROR 011","El usuario ingresado ya esta en uso.");
-				}else {
-					mensajeError("ERROR 010","Ha fallado la conexion con el servidor, reintente.");
-				}
-			}
 		}else{
 			mensajeError("ERROR 001","Debe completar todos los campos");
 		}
 	}
-
+	
+	public void verificarRegistro(String respuesta) {
+		if(respuesta.equals("Conexion exitosa")) {
+			vInicio.setVisible(false);
+			vPrincipal.setVisible(true);
+			//cargarListaDeContactos();
+			//cargarListaDeConversaciones();
+		}else {
+			mensajeError("ERROR 011","El nombre de usuario ya se encuentra en uso, por favor ingrese otro.");
+		}
+	}
+	
 	private void agregarContacto() {
 		String nombre = vContacto.getTfNombre().getText();
 		if (!(nombre.equals("") || nombre.equals(sistema.getUsuario().getNombre()))) {
 			if(sistema.getAgenda().containsKey(nombre)){
-				//Los nicknames son unicos, no debería suceder
 				mensajeError("ERROR 006","Se ha intentado agregar a un contacto ya agendado");
 			}else {
-				try {
-					sistema.consultaPorContacto(nombre);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				sistema.agregarContacto(nombre);
 			}
 		}else {
 			if(nombre.equals("")) {
 				mensajeError("ERROR 001", "Debe ingresar un nombre de contacto");
 			}else {
-				mensajeError("ERROR 001","No puede agregarse usted como contacto");
+				mensajeError("ERROR 001", "No puede agregarse usted como contacto");
 			}	
 		}
 	}
