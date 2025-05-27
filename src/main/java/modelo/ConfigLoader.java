@@ -11,8 +11,9 @@ public class ConfigLoader {
 	        try {
 	            Properties props = new Properties();
 	            props.load(new FileInputStream("config.properties"));
-	            host = props.getProperty("server.host");
-	            port = Integer.parseInt(props.getProperty("server.port"));
+	            
+	            host = props.getProperty("manitor.host");
+	            port = Integer.parseInt(props.getProperty("monitor.port"));
 	        } catch (IOException e) {
 	            e.printStackTrace();
 	        }

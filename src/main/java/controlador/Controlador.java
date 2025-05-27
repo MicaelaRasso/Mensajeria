@@ -2,7 +2,6 @@ package controlador;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -15,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
+import excepciones.SinConexionException;
 import modelo.Contacto;
 import modelo.Conversacion;
 import modelo.Mensaje;
@@ -192,12 +192,7 @@ public class Controlador implements ActionListener{
 	}
 
 	public void enviarMensaje(String m, Contacto contactoActual){
-		try {
-			sistema.enviarMensaje(m, contactoActual);
-		} catch (IOException e) {
-			System.out.println("Controlador - enviarMensaje");
-			e.printStackTrace();
-		}
+		sistema.enviarMensaje(contactoActual, m);
 	}
 
 	public void cargarListaDeContactos() {
@@ -265,7 +260,7 @@ public class Controlador implements ActionListener{
 
 	    // Obtengo la lista original y la invierto
 	    ArrayList<Mensaje> invertida = new ArrayList<>(sistema.cargarMensajesDeConversacion(contactoActual));
-//	    System.out.println("[DEBUG] cargarMensajes(): mensajes totales sin invertir = " + invertida.size());
+	    //	    System.out.println("[DEBUG] cargarMensajes(): mensajes totales sin invertir = " + invertida.size());
 
 	    Collections.reverse(invertida);
 //	    System.out.println("[DEBUG] cargarMensajes(): mensajes totales invertidos = " + invertida.size());
@@ -394,6 +389,10 @@ public class Controlador implements ActionListener{
 			    JOptionPane.WARNING_MESSAGE
 			);
 
+	}
+
+	public void sinConexion(String e) {
+		mensajeError("ERROR 010", e);
 	}
 
 }

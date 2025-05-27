@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+
 import modelo.Sistema;
-import conexion.PuertoDTO;
-import conexion.ListaServidoresDTO;
-import conexion.Paquete;
-import conexion.MensajeDTO;
-import conexion.UsuarioDTO;
 
 /**
  * Maneja la conexión al Monitor. Se auto-inicia y envía petición de servidor activo.
@@ -48,7 +44,7 @@ public class ConexionMonitor implements Runnable {
     }
 
     @Override
-    public void run() {
+    public void run(){
         try {
             socket = new Socket(host, port);
             out = new ObjectOutputStream(socket.getOutputStream());
@@ -62,7 +58,7 @@ public class ConexionMonitor implements Runnable {
                 sistema.recibePaqueteDelMonitor(paquete);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+        	sistema.sinConexion("No hay conexion al monitor");
         } finally {
             close();
         }

@@ -55,8 +55,9 @@ public class ConexionServidor implements Runnable {
     /**
      * Envía un mensaje al servidor.
      */
-    public void enviarMensaje(String destinatario, String texto) {
-        send(new Paquete("EnviarM", new MensajeDTO(sistema.getUsuario().getId(), destinatario, texto)));
+    public void enviarMensaje(String receptor, String texto) {
+    	//emisor, mensaje, receptor
+        send(new Paquete("EnviarM", new MensajeDTO(sistema.getUsuario(), texto, sistema.getContacto(receptor))));
     }
 
     /**

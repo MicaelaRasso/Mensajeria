@@ -4,15 +4,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import conexion.Paquete;
-import conexion.PuertoDTO;
-import conexion.ListaServidoresDTO;
 import conexion.ConexionMonitor;
 import conexion.ConexionServidor;
 import conexion.MensajeDTO;
+import conexion.Paquete;
+import conexion.PuertoDTO;
 import conexion.UsuarioDTO;
 import controlador.Controlador;
 import excepciones.ContactoNoExisteException;
+import excepciones.SinConexionException;
 
 /**
  * Orquesta el flujo del cliente: recibe paquetes de conexiones,
@@ -43,7 +43,11 @@ public class Sistema {
 
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
-        conexionMonitor.start();
+        try {
+            conexionMonitor.start();
+        }catch(SinConexionException e){
+        	controlador.sinConexion(e.getMessage());
+        }
     }
 
 
@@ -61,15 +65,17 @@ public class Sistema {
                 // Configura y arranca la conexión al servidor
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
-                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario, "")));
+                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario)));
+                
                 break;
         }
     }
 
     /**
      * Callback desde ConexionServidor al recibir paquetes.
+     * @throws ContactoNoExisteException 
      */
-    public void recibePaqueteDeServidor(Paquete paquete) {
+    public void recibePaqueteDeServidor(Paquete paquete) throws ContactoNoExisteException {
         switch (paquete.getOperacion()) {
             case "RegistrarUR":
             	
@@ -81,9 +87,9 @@ public class Sistema {
 					
 				} else {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
-					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
+					Contacto nuevoContacto = new Contacto(usuarioDTO.getEmisor().getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
-					controlador.nuevoContacto(nuevoContacto);
+					//ntrolador.contactoAgregado(nuevoContacto);
 				}
 				break;
             case "RecibirM":
@@ -92,6 +98,22 @@ public class Sistema {
         }
     }
 
+    /**
+     * Finaliza ambas conexiones.
+     */
+    public void detener() {
+        if (conexionMonitor != null) conexionMonitor.stop();
+        if (conexionServidor != null) conexionServidor.stop();
+    }
+
+    /*
+     * Avisa al controlador para que no permita acceso al sistema
+     * */
+	public void sinConexion(String message) {
+		controlador.sinConexion(message);
+		
+	}
+    
     private void recibirMensaje(MensajeDTO mensaje) {
         Usuario emisor = mensaje.getEmisor();
         String texto = mensaje.getMensaje();
@@ -127,14 +149,26 @@ public class Sistema {
         }
     }
 
-    /**
-     * Finaliza ambas conexiones.
-     */
-    public void detener() {
-        if (conexionMonitor != null) conexionMonitor.stop();
-        if (conexionServidor != null) conexionServidor.stop();
+    public void crearConversacion(Contacto contacto) {
+        if (!conversaciones.contains(contacto.getConversacion())) {
+            Conversacion conv = new Conversacion(contacto);
+            contacto.setConversacion(conv);
+            conversaciones.add(conv);
+        }
     }
 
+    public ArrayList<Mensaje> cargarMensajesDeConversacion(Contacto contacto) {
+        Conversacion conv = contacto.getConversacion();
+        if (conv != null) {
+            return conv.getMensajes();
+        }
+        return new ArrayList<>();
+    }
+    	
+    public Contacto getContacto(String nombre) {
+		return agenda.get(nombre);
+	}
+    
     public Usuario getUsuario() {
 		return usuario;
 	}
@@ -146,5 +180,6 @@ public class Sistema {
 	public ArrayList<Conversacion> getConversaciones() {
 		return conversaciones;
 	}
+
 	
 }
