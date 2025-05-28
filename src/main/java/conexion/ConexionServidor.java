@@ -57,7 +57,10 @@ public class ConexionServidor implements Runnable {
      */
     public void enviarMensaje(String receptor, String texto) {
     	//emisor, mensaje, receptor
-        send(new Paquete("EnviarM", new MensajeDTO(sistema.getUsuario(), texto, sistema.getContacto(receptor))));
+    	
+    	UsuarioDTO emisorDTO = new UsuarioDTO(sistema.getUsuario().getNombre());
+    	UsuarioDTO receptorDTO = new UsuarioDTO(sistema.getContacto(receptor).getNombre());
+        send(new Paquete("EnviarM", new MensajeDTO(emisorDTO, texto, receptorDTO)));
     }
 
     /**
@@ -81,8 +84,6 @@ public class ConexionServidor implements Runnable {
             socket = new Socket(host, port);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-            
-            
             
             while (running && !thread.isInterrupted()) {
                 Paquete paquete = (Paquete) in.readObject();

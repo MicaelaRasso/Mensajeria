@@ -48,15 +48,17 @@ public class ConexionMonitor implements Runnable {
         try {
             socket = new Socket(host, port);
             out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
             in = new ObjectInputStream(socket.getInputStream());
 
             // Solicitar servidor activo
-            out.writeObject(new Paquete("ObtenerSA", null));
+            out.writeObject(new Paquete("obtenerSA", null));
+            out.flush();
 
-            while (running && !thread.isInterrupted()) {
-                Paquete paquete = (Paquete) in.readObject();
-                sistema.recibePaqueteDelMonitor(paquete);
-            }
+            Paquete paquete = (Paquete) in.readObject();
+            sistema.recibePaqueteDelMonitor(paquete);
+            socket.close();
+        
         } catch (Exception e) {
         	sistema.sinConexion("No hay conexion al monitor");
         } finally {

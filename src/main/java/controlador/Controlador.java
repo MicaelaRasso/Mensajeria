@@ -14,7 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-import excepciones.SinConexionException;
 import modelo.Contacto;
 import modelo.Conversacion;
 import modelo.Mensaje;

@@ -12,7 +12,6 @@ import conexion.PuertoDTO;
 import conexion.UsuarioDTO;
 import controlador.Controlador;
 import excepciones.ContactoNoExisteException;
-import excepciones.SinConexionException;
 
 /**
  * Orquesta el flujo del cliente: recibe paquetes de conexiones,
@@ -43,11 +42,8 @@ public class Sistema {
 
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
-        try {
-            conexionMonitor.start();
-        }catch(SinConexionException e){
-        	controlador.sinConexion(e.getMessage());
-        }
+        conexionMonitor.start();
+        
     }
 
 
@@ -56,8 +52,8 @@ public class Sistema {
      * Sólo procesa y delega acciones, no envía directamente.
      */
     public void recibePaqueteDelMonitor(Paquete paquete) {
-        switch (paquete.getOperacion()) {
-            case "ObtenerSAR":
+    	if(paquete.getOperacion().equals("obtenerSAR")) {
+    		if(paquete.getContenido() != null) {
                 PuertoDTO dto = (PuertoDTO) paquete.getContenido();
                 this.serverPort = dto.getPuerto();
                 this.serverHost = dto.getAddress();
@@ -65,10 +61,12 @@ public class Sistema {
                 // Configura y arranca la conexión al servidor
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
-                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario)));
-                
-                break;
-        }
+                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario.getNombre())));
+    			
+    		}else {
+    			controlador.sinConexion(serverHost);
+    		}
+    	}
     }
 
     /**
@@ -77,22 +75,22 @@ public class Sistema {
      */
     public void recibePaqueteDeServidor(Paquete paquete) throws ContactoNoExisteException {
         switch (paquete.getOperacion()) {
-            case "RegistrarUR":
+            case "registrarUR":
             	
                 controlador.verificarRegistro(((UsuarioDTO)paquete.getContenido()).getRespuesta());
                 break;
-            case "AgregarCR":
+            case "agregarCR":
 				if (paquete.getContenido() == null) { //No existe el contacto
 					throw new ContactoNoExisteException("El contacto no existe en el servidor.");
 					
 				} else {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
-					Contacto nuevoContacto = new Contacto(usuarioDTO.getEmisor().getNombre());
+					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
-					//ntrolador.contactoAgregado(nuevoContacto);
+					//controlador.contactoAgregado(nuevoContacto);
 				}
 				break;
-            case "RecibirM":
+            case "recibirM":
                 recibirMensaje((MensajeDTO) paquete.getContenido());
                 break;
         }
@@ -115,11 +113,11 @@ public class Sistema {
 	}
     
     private void recibirMensaje(MensajeDTO mensaje) {
-        Usuario emisor = mensaje.getEmisor();
+        UsuarioDTO emisorDTO = mensaje.getEmisor();
         String texto = mensaje.getMensaje();
         LocalDateTime fechahora = mensaje.getFechaYHora();
 
-        Contacto cont = agenda.computeIfAbsent(emisor.getNombre(), Contacto::new);
+        Contacto cont = agenda.computeIfAbsent(emisorDTO.getNombre(), Contacto::new); //lo busca en la agenda, si no esta, lo crea
         Conversacion conv = cont.getConversacion();
         if (conv == null) {
             conv = new Conversacion(cont);
@@ -144,7 +142,7 @@ public class Sistema {
      */
     public void agregarContacto(String nombreContacto) {
         if (conexionServidor != null) {
-        	Paquete paquete = new Paquete("AgregarC", new UsuarioDTO(new Contacto(nombreContacto)));
+        	Paquete paquete = new Paquete("agregarC", new UsuarioDTO(nombreContacto));
             conexionServidor.agregarContacto(paquete);
         }
     }
