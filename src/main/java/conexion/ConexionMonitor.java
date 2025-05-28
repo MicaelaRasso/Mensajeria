@@ -14,8 +14,8 @@ public class ConexionMonitor implements Runnable {
     private final Sistema sistema;
     private final String host;
     private final int port;
-    private Thread thread;
     private volatile boolean running = true;
+    private Thread thread;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -56,8 +56,7 @@ public class ConexionMonitor implements Runnable {
             out.flush();
 
             Paquete paquete = (Paquete) in.readObject();
-            sistema.recibePaqueteDelMonitor(paquete);
-            socket.close();
+            sistema.recibePaqueteDelMonitor(paquete, socket);
         
         } catch (Exception e) {
         	sistema.sinConexion("No hay conexion al monitor");
@@ -66,7 +65,7 @@ public class ConexionMonitor implements Runnable {
         }
     }
 
-    private void close() {
+    public void close() {
         try {
             if (in != null) in.close();
             if (out != null) out.close();

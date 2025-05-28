@@ -1,5 +1,6 @@
 package modelo;
 
+import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +52,7 @@ public class Sistema {
      * Callback desde ConexionMonitor al recibir cualquier paquete.
      * Sólo procesa y delega acciones, no envía directamente.
      */
-    public void recibePaqueteDelMonitor(Paquete paquete) {
+    public void recibePaqueteDelMonitor(Paquete paquete, Socket s) {
     	if(paquete.getOperacion().equals("obtenerSAR")) {
     		if(paquete.getContenido() != null) {
                 PuertoDTO dto = (PuertoDTO) paquete.getContenido();
@@ -61,10 +62,12 @@ public class Sistema {
                 // Configura y arranca la conexión al servidor
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
-                conexionServidor.registrarUsuario(new Paquete("RegistrarU", new UsuarioDTO(usuario.getNombre())));
+                PuertoDTO p = new PuertoDTO(s.getLocalPort(),s.getLocalAddress().getHostAddress());
+                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre(), p)));
+                //conexionMonitor.close();
     			
     		}else {
-    			controlador.sinConexion(serverHost);
+    			controlador.sinConexion("No hay servidores disponibles en este momento");
     		}
     	}
     }
@@ -73,22 +76,27 @@ public class Sistema {
      * Callback desde ConexionServidor al recibir paquetes.
      * @throws ContactoNoExisteException 
      */
-    public void recibePaqueteDeServidor(Paquete paquete) throws ContactoNoExisteException {
+    public void recibePaqueteDeServidor(Paquete paquete){
         switch (paquete.getOperacion()) {
             case "registrarUR":
-            	
+            	System.out.println("Verificar registro: " + paquete.toString());
                 controlador.verificarRegistro(((UsuarioDTO)paquete.getContenido()).getRespuesta());
                 break;
             case "agregarCR":
-				if (paquete.getContenido() == null) { //No existe el contacto
-					throw new ContactoNoExisteException("El contacto no existe en el servidor.");
-					
+            	String mensaje;
+            	boolean resp;
+            	UsuarioDTO uDTO = (UsuarioDTO) paquete.getContenido();
+				if (uDTO.getRespuesta() == "no existe") {
+					resp = false;
+					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
 				} else {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
 					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
-					//controlador.contactoAgregado(nuevoContacto);
+					resp = true;
+					mensaje = "No existe el contacto " + uDTO.getNombre();
 				}
+				controlador.notificarRespuestaServidor(mensaje, resp);
 				break;
             case "recibirM":
                 recibirMensaje((MensajeDTO) paquete.getContenido());

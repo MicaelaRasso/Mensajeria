@@ -49,7 +49,9 @@ public class ConexionServidor implements Runnable {
      * Envía el paquete de registro de usuario.
      */
     public void registrarUsuario(Paquete paqueteRegistro) {
+    	System.out.println(paqueteRegistro.toString());
         send(paqueteRegistro);
+        
     }
 
     /**
@@ -60,7 +62,7 @@ public class ConexionServidor implements Runnable {
     	
     	UsuarioDTO emisorDTO = new UsuarioDTO(sistema.getUsuario().getNombre());
     	UsuarioDTO receptorDTO = new UsuarioDTO(sistema.getContacto(receptor).getNombre());
-        send(new Paquete("EnviarM", new MensajeDTO(emisorDTO, texto, receptorDTO)));
+        send(new Paquete("enviarM", new MensajeDTO(emisorDTO, texto, receptorDTO)));
     }
 
     /**

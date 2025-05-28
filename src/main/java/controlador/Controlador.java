@@ -160,7 +160,7 @@ public class Controlador implements ActionListener{
 	}
 	
 	public void verificarRegistro(String respuesta) {
-		if(respuesta.equals("Conexion exitosa")) {
+		if(respuesta.equals("registrado")) {
 			vInicio.setVisible(false);
 			vPrincipal.setVisible(true);
 			//cargarListaDeContactos();
@@ -237,11 +237,6 @@ public class Controlador implements ActionListener{
 	        cargarListaDeMensajes();
 	    });
 	}
-
-//crearPanelMensaje en la ventanaPrincipal, recibe el mensaje y el usuario del sistema
-	
-//actualizarVentana (nuevoMetodo con tres funciones que salen del sistema)
-	
 	
 	private void cargarListaDeMensajes() {
 	    if (contactoActual == null) {
@@ -333,15 +328,19 @@ public class Controlador implements ActionListener{
         cargarListaDeContactos();
         cargarListaDeConversaciones();
 	}
-	
+/*	
 	public void contactoAgregado(Contacto c) {
 	    SwingUtilities.invokeLater(() -> {
-	        cargarListaDeContactos();
-	        cargarListaDeConversaciones();  // también para que aparezca la nueva conversación
+	    	actualizarVentanaPrincipal();
+//	        cargarListaDeContactos();
+//	        cargarListaDeConversaciones();  // también para que aparezca la nueva conversación
 	        mensajeAviso("Contacto agregado", "Se ha agregado el contacto " + c.getNombre());
 	    });
 	}
-
+	public void contactoInexistente() {
+		
+	}
+	*/
 	public void contactoSinConexion(String s, String e) {
 		mensajeError(e,s);
 	}
@@ -393,5 +392,7 @@ public class Controlador implements ActionListener{
 	public void sinConexion(String e) {
 		mensajeError("ERROR 010", e);
 	}
+
+
 
 }
