@@ -63,9 +63,7 @@ public class Sistema {
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
                 PuertoDTO p = new PuertoDTO(s.getLocalPort(),s.getLocalAddress().getHostAddress());
-                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre(), p)));
-                //conexionMonitor.close();
-    			
+                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre(), p)));    			
     		}else {
     			controlador.sinConexion("No hay servidores disponibles en este momento");
     		}
@@ -88,13 +86,14 @@ public class Sistema {
             	UsuarioDTO uDTO = (UsuarioDTO) paquete.getContenido();
 				if (uDTO.getRespuesta() == "no existe") {
 					resp = false;
-					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
+					mensaje = "No existe el contacto " + uDTO.getNombre();
+					
 				} else {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
 					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
 					resp = true;
-					mensaje = "No existe el contacto " + uDTO.getNombre();
+					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
 				}
 				controlador.notificarRespuestaServidor(mensaje, resp);
 				break;
@@ -125,7 +124,11 @@ public class Sistema {
         String texto = mensaje.getMensaje();
         LocalDateTime fechahora = mensaje.getFechaYHora();
 
-        Contacto cont = agenda.computeIfAbsent(emisorDTO.getNombre(), Contacto::new); //lo busca en la agenda, si no esta, lo crea
+        Contacto cont = agenda.get(emisorDTO.getNombre());
+        if (cont == null) {
+			cont = new Contacto(emisorDTO.getNombre());
+			agenda.put(cont.getNombre(), cont);
+		}
         Conversacion conv = cont.getConversacion();
         if (conv == null) {
             conv = new Conversacion(cont);
@@ -142,7 +145,12 @@ public class Sistema {
     public void enviarMensaje(Contacto contacto, String texto) {
         if (conexionServidor != null) {
             conexionServidor.enviarMensaje(contacto.getNombre(), texto);
+            Conversacion conv = contacto.getConversacion();
+            conv.agregarMensaje(texto, LocalDateTime.now(), usuario);
         }
+        else {
+			controlador.sinConexion("No se puede enviar el mensaje, no hay conexión al servidor.");
+		}
     }
 
     /**

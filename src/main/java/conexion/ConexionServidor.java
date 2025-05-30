@@ -93,8 +93,6 @@ public class ConexionServidor implements Runnable {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            close();
         }
     }
 

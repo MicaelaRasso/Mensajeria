@@ -190,8 +190,8 @@ public class Controlador implements ActionListener{
 		sistema.crearConversacion(contacto);
 	}
 
-	public void enviarMensaje(String m, Contacto contactoActual){
-		sistema.enviarMensaje(contactoActual, m);
+	public void enviarMensaje(String mensaje, Contacto contactoActual){
+		sistema.enviarMensaje(contactoActual, mensaje);
 	}
 
 	public void cargarListaDeContactos() {
