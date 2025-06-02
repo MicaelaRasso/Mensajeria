@@ -152,8 +152,12 @@ public class Controlador implements ActionListener{
 	private void registroInicial() {
 		String nombre = vInicio.getTfNombre().getText();
 		if (!(nombre.equals(""))) {
-			Usuario usuario = new Usuario(nombre,"127.0.0.1"); 
-			this.sistema = new Sistema(usuario,this);
+			 if (this.sistema == null) {
+		            Usuario usuario = new Usuario(nombre);
+		            this.sistema = new Sistema(usuario, this);
+		        } else {
+		            this.sistema.reintentarRegistro(nombre);
+		        }
 		}else{
 			mensajeError("ERROR 001","Debe completar todos los campos");
 		}
@@ -216,6 +220,7 @@ public class Controlador implements ActionListener{
 	}
 	
 	public void notificarMensaje(Contacto cont) {
+		cargarListaDeContactos();
 		cargarListaDeConversaciones();  // Recargamos la lista de conversaciones con el asterisco
 		if (!cont.equals(contactoActual)) {
 			JList<String> listaConversaciones = (JList<String>) vPrincipal.getSpConversacion().getViewport().getView();
@@ -230,6 +235,7 @@ public class Controlador implements ActionListener{
 				}
 			}
 		}
+		nuevoMensaje();
 	}
 	
 	public void nuevoMensaje() {

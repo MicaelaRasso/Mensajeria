@@ -61,7 +61,7 @@ public class ConexionServidor implements Runnable {
     	//emisor, mensaje, receptor
     	
     	UsuarioDTO emisorDTO = new UsuarioDTO(sistema.getUsuario().getNombre());
-    	UsuarioDTO receptorDTO = new UsuarioDTO(sistema.getContacto(receptor).getNombre());
+    	UsuarioDTO receptorDTO = new UsuarioDTO(receptor);
         send(new Paquete("enviarM", new MensajeDTO(emisorDTO, texto, receptorDTO)));
     }
 
@@ -72,6 +72,10 @@ public class ConexionServidor implements Runnable {
         send(paqueteContacto);
     }
 
+    public void desconectarUsuario(Paquete paquete) {
+		send(paquete);
+	}
+    
     private void send(Paquete paquete) {
         try {
             if (out != null) out.writeObject(paquete);
@@ -103,4 +107,6 @@ public class ConexionServidor implements Runnable {
             if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException ignore) {}
     }
+
+	
 }

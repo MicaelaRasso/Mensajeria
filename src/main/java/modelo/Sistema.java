@@ -46,8 +46,6 @@ public class Sistema {
         conexionMonitor.start();
         
     }
-
-
 	/**
      * Callback desde ConexionMonitor al recibir cualquier paquete.
      * Sólo procesa y delega acciones, no envía directamente.
@@ -62,8 +60,7 @@ public class Sistema {
                 // Configura y arranca la conexión al servidor
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
-                PuertoDTO p = new PuertoDTO(s.getLocalPort(),s.getLocalAddress().getHostAddress());
-                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre(), p)));    			
+                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre())));    			
     		}else {
     			controlador.sinConexion("No hay servidores disponibles en este momento");
     		}
@@ -84,7 +81,7 @@ public class Sistema {
             	String mensaje;
             	boolean resp;
             	UsuarioDTO uDTO = (UsuarioDTO) paquete.getContenido();
-				if (uDTO.getRespuesta() == "no existe") {
+				if (uDTO.getRespuesta().equalsIgnoreCase("no existe")) {
 					resp = false;
 					mensaje = "No existe el contacto " + uDTO.getNombre();
 					
@@ -109,6 +106,12 @@ public class Sistema {
     public void detener() {
         if (conexionMonitor != null) conexionMonitor.stop();
         if (conexionServidor != null) conexionServidor.stop();
+    }
+
+    public void reintentarRegistro(String nuevoNombre) {
+        this.usuario.setNombre(nuevoNombre);
+        Paquete paqueteRegistro = new Paquete("registrarU", new UsuarioDTO(nuevoNombre));
+        conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
     /*
@@ -193,6 +196,12 @@ public class Sistema {
 
 	public ArrayList<Conversacion> getConversaciones() {
 		return conversaciones;
+	}
+
+
+	public void desconectarUsuario() {
+		Paquete paquete = new Paquete("desconectarU", new UsuarioDTO(usuario.getNombre()));
+		conexionServidor.desconectarUsuario(paquete);
 	}
 
 	
