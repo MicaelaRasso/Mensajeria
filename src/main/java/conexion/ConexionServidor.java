@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+
 import modelo.Sistema;
-import conexion.Paquete;
-import conexion.MensajeDTO;
-import conexion.UsuarioDTO;
 
 /**
  * Maneja la conexión al Servidor. Se auto-inicia tras recibir datos del monitor.
@@ -57,11 +55,12 @@ public class ConexionServidor implements Runnable {
      * Envía el paquete de registro de usuario.
      */
     public void registrarUsuario(Paquete paqueteRegistro) {
+        dormir(1000);
     	System.out.println(paqueteRegistro.toString());
         send(paqueteRegistro);
     }
 
-    /**
+	/**
      * Envía un mensaje al servidor.
      */
     public void enviarMensaje(String receptor, String texto) {
@@ -154,5 +153,10 @@ public class ConexionServidor implements Runnable {
         }
         return false;
     }
-	
+
+    private void dormir(int i) {
+		try {
+			Thread.sleep(i);
+		} catch (InterruptedException e) {}
+	}	
 }

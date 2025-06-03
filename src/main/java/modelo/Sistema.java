@@ -73,7 +73,7 @@ public class Sistema {
         }
         conexionServidor = new ConexionServidor(this, serverHost, serverPort);
         conexionServidor.start();
-        registrarUsuarioEnServidor();
+        registrarUsuarioEnServidor(); //PROBAR SI FUNCIONA PARA LA RECONEXION, NO LO CHEQUEE
     }
 
     private void registrarUsuarioEnServidor() {
