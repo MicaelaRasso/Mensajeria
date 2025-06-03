@@ -40,6 +40,7 @@ public class VentanaPrincipal extends JFrame {
 	private JButton btnContacto;
 	private JScrollPane spMensajes;
 	protected Point mouseClickPoint;
+	private JButton btnCerrar;
 	
 	public VentanaPrincipal(Controlador controlador) {
 		Color cTexto = new Color(18, 1, 25); //violeta
@@ -161,26 +162,13 @@ public class VentanaPrincipal extends JFrame {
         barraMovible.add(lblTitulo, BorderLayout.CENTER);
 
         // ✔️ Botón Cerrar a la derecha
-        JButton btnCerrar = new JButton("X");
+        btnCerrar = new JButton("X");
         btnCerrar.setPreferredSize(new Dimension(25, 25)); // tamaño acorde a la barra
         btnCerrar.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnCerrar.setBorder(BorderFactory.createLineBorder(cBorde, 2));
         btnCerrar.setForeground(cTexto);
         btnCerrar.setBackground(cBoton);
-        btnCerrar.addActionListener(e -> {
-            int opcion = javax.swing.JOptionPane.showConfirmDialog(
-                this,
-                "¿Seguro que querés cerrar la aplicación?",
-                "Confirmar salida",
-                javax.swing.JOptionPane.YES_NO_OPTION
-            );
-
-            if (opcion == javax.swing.JOptionPane.YES_OPTION) {
-            	//si se necesita, se podría ocultar la ventana y poner un tiempo de espera para hacer la persistencia
-            	System.exit(0);
-            }
-        });
-
+        
         barraMovible.add(btnCerrar, BorderLayout.EAST);
         
 	}
@@ -282,6 +270,10 @@ public class VentanaPrincipal extends JFrame {
 
 	public JScrollPane getSpMensajes() {
 		return spMensajes;
+	}
+
+	public JButton getBtnCerrar() {
+		return btnCerrar;
 	}
 	
 }

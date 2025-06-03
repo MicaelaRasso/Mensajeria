@@ -66,6 +66,7 @@ public class Controlador implements ActionListener{
 		this.vPrincipal.getBtnContacto().addActionListener(this);
 		this.vContacto.getBtnAgregar().addActionListener(this);
 		this.vContacto.getBtnVolver().addActionListener(this);
+		this.vPrincipal.getBtnCerrar().addActionListener(this);
 	}
 
 	public static void main(String[] args) {
@@ -141,6 +142,22 @@ public class Controlador implements ActionListener{
 							if(vContacto.getBtnVolver().equals(e.getSource())) {
 								vPrincipal.setVisible(true);
 								vContacto.setVisible(false);	
+							}
+							else {
+								if(vPrincipal.getBtnCerrar().equals(e.getSource())){
+						            int opcion = javax.swing.JOptionPane.showConfirmDialog(
+						                vPrincipal,
+						                "¿Seguro que querés cerrar la aplicación?",
+						                "Confirmar salida",
+						                javax.swing.JOptionPane.YES_NO_OPTION
+						            );
+
+						            if (opcion == javax.swing.JOptionPane.YES_OPTION) {
+						            	sistema.desconectarUsuario();
+						            	//si se necesita, se podría ocultar la ventana y poner un tiempo de espera para hacer la persistencia
+						            	System.exit(0);
+						            }
+							    }
 							}
 						}
 					}

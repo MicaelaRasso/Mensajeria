@@ -50,23 +50,38 @@ public class Sistema {
      * Callback desde ConexionMonitor al recibir cualquier paquete.
      * Sólo procesa y delega acciones, no envía directamente.
      */
-    public void recibePaqueteDelMonitor(Paquete paquete, Socket s) {
-    	if(paquete.getOperacion().equals("obtenerSAR")) {
-    		if(paquete.getContenido() != null) {
+    public synchronized void recibePaqueteDelMonitor(Paquete paquete, Socket s) {
+        switch (paquete.getOperacion()) {
+        case "obtenerSAR":
+            if (paquete.getContenido() != null) {
                 PuertoDTO dto = (PuertoDTO) paquete.getContenido();
                 this.serverPort = dto.getPuerto();
                 this.serverHost = dto.getAddress();
+                System.out.println(serverHost + ":" + serverPort);
 
-                // Configura y arranca la conexión al servidor
-                conexionServidor = new ConexionServidor(this, serverHost, serverPort);
-                conexionServidor.start();
-                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre())));    			
-    		}else {
-    			controlador.sinConexion("No hay servidores disponibles en este momento");
-    		}
-    	}
+                reiniciarConexionServidor();
+                registrarUsuarioEnServidor();
+            } else {
+                controlador.sinConexion("No hay servidores disponibles en este momento");
+            }
+        }
+    }
+    
+    private void reiniciarConexionServidor() {
+        if (conexionServidor != null) {
+            conexionServidor.stop();
+        }
+        conexionServidor = new ConexionServidor(this, serverHost, serverPort);
+        conexionServidor.start();
+        registrarUsuarioEnServidor();
     }
 
+    private void registrarUsuarioEnServidor() {
+        Paquete paqueteRegistro = new Paquete("registrarU", new UsuarioDTO(usuario.getNombre()));
+        conexionServidor.registrarUsuario(paqueteRegistro);
+    }
+
+    
     /**
      * Callback desde ConexionServidor al recibir paquetes.
      * @throws ContactoNoExisteException 
@@ -99,7 +114,14 @@ public class Sistema {
                 break;
         }
     }
-
+    
+    public void reconectarConServidor() {
+        this.conexionServidor.stop();
+        this.conexionServidor = null;
+        this.conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
+        this.conexionMonitor.start();
+    }
+    
     /**
      * Finaliza ambas conexiones.
      */
@@ -202,6 +224,10 @@ public class Sistema {
 	public void desconectarUsuario() {
 		Paquete paquete = new Paquete("desconectarU", new UsuarioDTO(usuario.getNombre()));
 		conexionServidor.desconectarUsuario(paquete);
+	}
+	
+	public ConexionMonitor getConexionMonitor() {
+		return conexionMonitor;
 	}
 
 	
