@@ -30,6 +30,7 @@ public class Sistema {
     // Módulos de conexión, autogestionan hilos y envíos
     private ConexionMonitor conexionMonitor;
     private ConexionServidor conexionServidor;
+    private boolean primerRegistro = true;
 
     // Estado de la aplicación
     private HashMap<String, Contacto> agenda = new HashMap<>();
@@ -59,8 +60,13 @@ public class Sistema {
                 this.serverHost = dto.getAddress();
                 System.out.println(serverHost + ":" + serverPort);
 
-                reiniciarConexionServidor();
-                registrarUsuarioEnServidor();
+                if(primerRegistro) {
+                	reiniciarConexionServidor();
+                    registrarUsuarioEnServidor();
+                    primerRegistro = false;
+                }else
+                	reiniciarConexionServidor();
+                	actualizarUsuarioEnServidor(); //Necesario para actualizar el socket del cliente en el servidor nuevo
             } else {
                 controlador.sinConexion("No hay servidores disponibles en este momento");
             }
@@ -73,7 +79,12 @@ public class Sistema {
         }
         conexionServidor = new ConexionServidor(this, serverHost, serverPort);
         conexionServidor.start();
-        registrarUsuarioEnServidor(); //PROBAR SI FUNCIONA PARA LA RECONEXION, NO LO CHEQUEE
+        //registrarUsuarioEnServidor(); //PROBAR SI FUNCIONA PARA LA RECONEXION, NO LO CHEQUEE
+    }
+    
+    private void actualizarUsuarioEnServidor() {
+        Paquete paqueteRegistro = new Paquete("actualizarSocket", new UsuarioDTO(usuario.getNombre()));
+        conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
     private void registrarUsuarioEnServidor() {

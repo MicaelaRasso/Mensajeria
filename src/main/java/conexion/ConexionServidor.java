@@ -55,9 +55,9 @@ public class ConexionServidor implements Runnable {
      * Envía el paquete de registro de usuario.
      */
     public void registrarUsuario(Paquete paqueteRegistro) {
-        dormir(1000);
     	System.out.println(paqueteRegistro.toString());
         send(paqueteRegistro);
+        dormir(500);
     }
 
 	/**
