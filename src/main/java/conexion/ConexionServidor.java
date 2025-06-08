@@ -8,6 +8,7 @@ import modelo.Sistema;
 import conexion.Paquete;
 import conexion.MensajeDTO;
 import conexion.UsuarioDTO;
+import encriptacion.Encriptacion;
 
 /**
  * Maneja la conexión al Servidor. Se auto-inicia tras recibir datos del monitor.
@@ -21,11 +22,13 @@ public class ConexionServidor implements Runnable {
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private Encriptacion encriptacion;
 
     public ConexionServidor(Sistema sistema, String host, int port) {
         this.sistema = sistema;
         this.host = host;
         this.port = port;
+        this.encriptacion = sistema.encriptacion;
         this.thread = new Thread(this, "ServerConnectionThread");
     }
 
@@ -62,7 +65,7 @@ public class ConexionServidor implements Runnable {
     	
     	UsuarioDTO emisorDTO = new UsuarioDTO(sistema.getUsuario().getNombre());
     	UsuarioDTO receptorDTO = new UsuarioDTO(sistema.getContacto(receptor).getNombre());
-        send(new Paquete("enviarM", new MensajeDTO(emisorDTO, texto, receptorDTO)));
+        send(new Paquete("enviarM",encriptacion.getEstrategia(), new MensajeDTO(emisorDTO, encriptacion.encriptar(texto), receptorDTO)));
     }
 
     /**

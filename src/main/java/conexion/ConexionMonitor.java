@@ -52,7 +52,7 @@ public class ConexionMonitor implements Runnable {
             in = new ObjectInputStream(socket.getInputStream());
 
             // Solicitar servidor activo
-            out.writeObject(new Paquete("obtenerSA", null));
+            out.writeObject(new Paquete("obtenerSA",null, null));
             out.flush();
 
             Paquete paquete = (Paquete) in.readObject();

@@ -12,6 +12,7 @@ import conexion.Paquete;
 import conexion.PuertoDTO;
 import conexion.UsuarioDTO;
 import controlador.Controlador;
+import encriptacion.Encriptacion;
 import excepciones.ContactoNoExisteException;
 
 /**
@@ -34,13 +35,13 @@ public class Sistema {
     // Estado de la aplicación
     private HashMap<String, Contacto> agenda = new HashMap<>();
     private ArrayList<Conversacion> conversaciones = new ArrayList<>();
+    public Encriptacion encriptacion = new Encriptacion();
 
     public Sistema(Usuario usuario, Controlador controlador) {
         this.usuario = usuario;
         this.controlador = controlador;
         this.monitorHost = ConfigLoader.host;
         this.monitorPort = ConfigLoader.port;
-
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
         conexionMonitor.start();
@@ -63,7 +64,7 @@ public class Sistema {
                 conexionServidor = new ConexionServidor(this, serverHost, serverPort);
                 conexionServidor.start();
                 PuertoDTO p = new PuertoDTO(s.getLocalPort(),s.getLocalAddress().getHostAddress());
-                conexionServidor.registrarUsuario(new Paquete("registrarU", new UsuarioDTO(usuario.getNombre(), p)));
+                conexionServidor.registrarUsuario(new Paquete("registrarU",null, new UsuarioDTO(usuario.getNombre(), p)));
                 //conexionMonitor.close();
     			
     		}else {
@@ -122,7 +123,7 @@ public class Sistema {
     
     private void recibirMensaje(MensajeDTO mensaje) {
         UsuarioDTO emisorDTO = mensaje.getEmisor();
-        String texto = mensaje.getMensaje();
+        String texto = encriptacion.desencriptar(mensaje.getMensaje());
         LocalDateTime fechahora = mensaje.getFechaYHora();
 
         Contacto cont = agenda.computeIfAbsent(emisorDTO.getNombre(), Contacto::new); //lo busca en la agenda, si no esta, lo crea
@@ -150,7 +151,7 @@ public class Sistema {
      */
     public void agregarContacto(String nombreContacto) {
         if (conexionServidor != null) {
-        	Paquete paquete = new Paquete("agregarC", new UsuarioDTO(nombreContacto));
+        	Paquete paquete = new Paquete("agregarC",null, new UsuarioDTO(nombreContacto));
             conexionServidor.agregarContacto(paquete);
         }
     }
