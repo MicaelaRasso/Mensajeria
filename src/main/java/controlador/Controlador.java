@@ -66,6 +66,7 @@ public class Controlador implements ActionListener{
 		this.vPrincipal.getBtnContacto().addActionListener(this);
 		this.vContacto.getBtnAgregar().addActionListener(this);
 		this.vContacto.getBtnVolver().addActionListener(this);
+		this.vPrincipal.getBtnCerrar().addActionListener(this);
 	}
 
 	public static void main(String[] args) {
@@ -142,6 +143,22 @@ public class Controlador implements ActionListener{
 								vPrincipal.setVisible(true);
 								vContacto.setVisible(false);	
 							}
+							else {
+								if(vPrincipal.getBtnCerrar().equals(e.getSource())){
+						            int opcion = javax.swing.JOptionPane.showConfirmDialog(
+						                vPrincipal,
+						                "¿Seguro que querés cerrar la aplicación?",
+						                "Confirmar salida",
+						                javax.swing.JOptionPane.YES_NO_OPTION
+						            );
+
+						            if (opcion == javax.swing.JOptionPane.YES_OPTION) {
+						            	sistema.desconectarUsuario();
+						            	//si se necesita, se podría ocultar la ventana y poner un tiempo de espera para hacer la persistencia
+						            	System.exit(0);
+						            }
+							    }
+							}
 						}
 					}
 				}
@@ -152,8 +169,12 @@ public class Controlador implements ActionListener{
 	private void registroInicial() {
 		String nombre = vInicio.getTfNombre().getText();
 		if (!(nombre.equals(""))) {
-			Usuario usuario = new Usuario(nombre,"127.0.0.1"); 
-			this.sistema = new Sistema(usuario,this);
+			 if (this.sistema == null) {
+		            Usuario usuario = new Usuario(nombre);
+		            this.sistema = new Sistema(usuario, this);
+		        } else {
+		            this.sistema.reintentarRegistro(nombre);
+		        }
 		}else{
 			mensajeError("ERROR 001","Debe completar todos los campos");
 		}
@@ -190,8 +211,8 @@ public class Controlador implements ActionListener{
 		sistema.crearConversacion(contacto);
 	}
 
-	public void enviarMensaje(String m, Contacto contactoActual){
-		sistema.enviarMensaje(contactoActual, m);
+	public void enviarMensaje(String mensaje, Contacto contactoActual){
+		sistema.enviarMensaje(contactoActual, mensaje);
 	}
 
 	public void cargarListaDeContactos() {
@@ -216,6 +237,7 @@ public class Controlador implements ActionListener{
 	}
 	
 	public void notificarMensaje(Contacto cont) {
+		cargarListaDeContactos();
 		cargarListaDeConversaciones();  // Recargamos la lista de conversaciones con el asterisco
 		if (!cont.equals(contactoActual)) {
 			JList<String> listaConversaciones = (JList<String>) vPrincipal.getSpConversacion().getViewport().getView();
@@ -230,6 +252,7 @@ public class Controlador implements ActionListener{
 				}
 			}
 		}
+		nuevoMensaje();
 	}
 	
 	public void nuevoMensaje() {

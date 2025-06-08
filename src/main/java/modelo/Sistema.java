@@ -31,6 +31,7 @@ public class Sistema {
     // Módulos de conexión, autogestionan hilos y envíos
     private ConexionMonitor conexionMonitor;
     private ConexionServidor conexionServidor;
+    private boolean primerRegistro = true;
 
     // Estado de la aplicación
     private HashMap<String, Contacto> agenda = new HashMap<>();
@@ -47,31 +48,51 @@ public class Sistema {
         conexionMonitor.start();
         
     }
-
-
 	/**
      * Callback desde ConexionMonitor al recibir cualquier paquete.
      * Sólo procesa y delega acciones, no envía directamente.
      */
-    public void recibePaqueteDelMonitor(Paquete paquete, Socket s) {
-    	if(paquete.getOperacion().equals("obtenerSAR")) {
-    		if(paquete.getContenido() != null) {
+    public synchronized void recibePaqueteDelMonitor(Paquete paquete, Socket s) {
+        switch (paquete.getOperacion()) {
+        case "obtenerSAR":
+            if (paquete.getContenido() != null) {
                 PuertoDTO dto = (PuertoDTO) paquete.getContenido();
                 this.serverPort = dto.getPuerto();
                 this.serverHost = dto.getAddress();
+                System.out.println(serverHost + ":" + serverPort);
 
-                // Configura y arranca la conexión al servidor
-                conexionServidor = new ConexionServidor(this, serverHost, serverPort);
-                conexionServidor.start();
-                PuertoDTO p = new PuertoDTO(s.getLocalPort(),s.getLocalAddress().getHostAddress());
-                conexionServidor.registrarUsuario(new Paquete("registrarU",null, new UsuarioDTO(usuario.getNombre(), p)));
-                //conexionMonitor.close();
-    			
-    		}else {
-    			controlador.sinConexion("No hay servidores disponibles en este momento");
-    		}
-    	}
+                if(primerRegistro) {
+                	reiniciarConexionServidor();
+                    registrarUsuarioEnServidor();
+                    primerRegistro = false;
+                }else
+                	reiniciarConexionServidor();
+                	actualizarUsuarioEnServidor(); //Necesario para actualizar el socket del cliente en el servidor nuevo
+            } else {
+                controlador.sinConexion("No hay servidores disponibles en este momento");
+            }
+        }
     }
+    
+    private void reiniciarConexionServidor() {
+        if (conexionServidor != null) {
+            conexionServidor.stop();
+        }
+        conexionServidor = new ConexionServidor(this, serverHost, serverPort);
+        conexionServidor.start();
+        //registrarUsuarioEnServidor(); //PROBAR SI FUNCIONA PARA LA RECONEXION, NO LO CHEQUEE
+    }
+    
+    private void actualizarUsuarioEnServidor() {
+        Paquete paqueteRegistro = new Paquete("actualizarSocket",null, new UsuarioDTO(usuario.getNombre()));
+        conexionServidor.registrarUsuario(paqueteRegistro);
+    }
+
+    private void registrarUsuarioEnServidor() {
+        Paquete paqueteRegistro = new Paquete("registrarU",null, new UsuarioDTO(usuario.getNombre()));
+        conexionServidor.registrarUsuario(paqueteRegistro);
+    }
+
 
     /**
      * Callback desde ConexionServidor al recibir paquetes.
@@ -87,15 +108,16 @@ public class Sistema {
             	String mensaje;
             	boolean resp;
             	UsuarioDTO uDTO = (UsuarioDTO) paquete.getContenido();
-				if (uDTO.getRespuesta() == "no existe") {
+				if (uDTO.getRespuesta().equalsIgnoreCase("no existe")) {
 					resp = false;
-					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
+					mensaje = "No existe el contacto " + uDTO.getNombre();
+					
 				} else {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
 					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
 					resp = true;
-					mensaje = "No existe el contacto " + uDTO.getNombre();
+					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
 				}
 				controlador.notificarRespuestaServidor(mensaje, resp);
 				break;
@@ -104,13 +126,26 @@ public class Sistema {
                 break;
         }
     }
-
+    
+    public void reconectarConServidor() {
+        this.conexionServidor.stop();
+        this.conexionServidor = null;
+        this.conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
+        this.conexionMonitor.start();
+    }
+    
     /**
      * Finaliza ambas conexiones.
      */
     public void detener() {
         if (conexionMonitor != null) conexionMonitor.stop();
         if (conexionServidor != null) conexionServidor.stop();
+    }
+
+    public void reintentarRegistro(String nuevoNombre) {
+        this.usuario.setNombre(nuevoNombre);
+        Paquete paqueteRegistro = new Paquete("registrarU",null, new UsuarioDTO(nuevoNombre));
+        conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
     /*
@@ -126,7 +161,11 @@ public class Sistema {
         String texto = encriptacion.desencriptar(mensaje.getMensaje());
         LocalDateTime fechahora = mensaje.getFechaYHora();
 
-        Contacto cont = agenda.computeIfAbsent(emisorDTO.getNombre(), Contacto::new); //lo busca en la agenda, si no esta, lo crea
+        Contacto cont = agenda.get(emisorDTO.getNombre());
+        if (cont == null) {
+			cont = new Contacto(emisorDTO.getNombre());
+			agenda.put(cont.getNombre(), cont);
+		}
         Conversacion conv = cont.getConversacion();
         if (conv == null) {
             conv = new Conversacion(cont);
@@ -143,7 +182,12 @@ public class Sistema {
     public void enviarMensaje(Contacto contacto, String texto) {
         if (conexionServidor != null) {
             conexionServidor.enviarMensaje(contacto.getNombre(), texto);
+            Conversacion conv = contacto.getConversacion();
+            conv.agregarMensaje(texto, LocalDateTime.now(), usuario);
         }
+        else {
+			controlador.sinConexion("No se puede enviar el mensaje, no hay conexión al servidor.");
+		}
     }
 
     /**
@@ -186,6 +230,16 @@ public class Sistema {
 
 	public ArrayList<Conversacion> getConversaciones() {
 		return conversaciones;
+	}
+
+
+	public void desconectarUsuario() {
+		Paquete paquete = new Paquete("desconectarU",null, new UsuarioDTO(usuario.getNombre()));
+		conexionServidor.desconectarUsuario(paquete);
+	}
+	
+	public ConexionMonitor getConexionMonitor() {
+		return conexionMonitor;
 	}
 
 	
