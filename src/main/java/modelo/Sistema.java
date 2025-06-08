@@ -14,6 +14,7 @@ import conexion.UsuarioDTO;
 import controlador.Controlador;
 import encriptacion.Encriptacion;
 import excepciones.ContactoNoExisteException;
+import persistencia.Persistencia;
 
 /**
  * Orquesta el flujo del cliente: recibe paquetes de conexiones,
@@ -37,12 +38,19 @@ public class Sistema {
     private HashMap<String, Contacto> agenda = new HashMap<>();
     private ArrayList<Conversacion> conversaciones = new ArrayList<>();
     public Encriptacion encriptacion = new Encriptacion();
+    public Persistencia persistencia = new Persistencia();
+    public String formatoPersistencia = "texto";
 
     public Sistema(Usuario usuario, Controlador controlador) {
+    	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(formatoPersistencia);
         this.usuario = usuario;
         this.controlador = controlador;
         this.monitorHost = ConfigLoader.host;
         this.monitorPort = ConfigLoader.port;
+        if(convs != null) {
+        	this.conversaciones = convs;
+        }
+        
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
         conexionMonitor.start();
@@ -173,7 +181,9 @@ public class Sistema {
             conversaciones.add(conv);
         }
         conv.recibirMensaje(texto, fechahora, cont);
+        persistencia.guardarConversacion(conversaciones, formatoPersistencia);
         controlador.notificarMensaje(cont);
+        
     }
 
     /**
@@ -184,6 +194,7 @@ public class Sistema {
             conexionServidor.enviarMensaje(contacto.getNombre(), texto);
             Conversacion conv = contacto.getConversacion();
             conv.agregarMensaje(texto, LocalDateTime.now(), usuario);
+            persistencia.guardarConversacion(conversaciones, formatoPersistencia);
         }
         else {
 			controlador.sinConexion("No se puede enviar el mensaje, no hay conexión al servidor.");

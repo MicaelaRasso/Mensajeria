@@ -8,6 +8,7 @@ public class ConfigLoader {
 	    public static int port;
 	    public static String key;
 	    public static String iv;
+	    public static String path;
 
 	    static {
 	        try {
@@ -16,6 +17,7 @@ public class ConfigLoader {
 	            
 	            host = props.getProperty("monitor.host");
 	            port = Integer.parseInt(props.getProperty("monitor.port"));
+	            path = props.getProperty("path");
 	            key = props.getProperty("key");
 	            iv = props.getProperty("iv");
 	        } catch (IOException e) {
