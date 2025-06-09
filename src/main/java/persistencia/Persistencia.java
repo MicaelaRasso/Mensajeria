@@ -17,23 +17,24 @@ public class Persistencia {
 		dao = factory.createConversacionDAO();
 	}
 	
-	public void guardarConversacion(ArrayList<Conversacion> conv,String format) {
-		try {			
+	public void guardarConversacion(ArrayList<Conversacion> conv, String format, String usuario) {
+		try {
+			System.out.println("Guardando conversación en formato " + format);
 			switch(format.toUpperCase()){
 			case "XML":
 				factory = new XMLDAOFactory();
 				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(".xml"));
+				dao.save(conv, path.concat(usuario).concat(".xml"));
 			break;
 			case "TEXTO":
 				factory = new TextDAOFactory();
 				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(".txt"));
+				dao.save(conv, path.concat(usuario).concat(".txt"));
 			break;
 			case "JSON":
 				factory = new JSONDAOFactory();
 				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(".json"));
+				dao.save(conv, path.concat(usuario).concat(".json"));
 			break;
 			}
 		}catch(IOException e) {
@@ -41,24 +42,24 @@ public class Persistencia {
 		}
 	}
 	
-	public ArrayList<Conversacion> CargarConversacion(String format) {
+	public ArrayList<Conversacion> CargarConversacion(String format, String usuario) {
 		ArrayList<Conversacion> conv = null;
 		try {			
 			switch(format.toUpperCase()){
 			case "XML":
 				factory = new XMLDAOFactory();
 				dao = factory.createConversacionDAO();
-				dao.load(path.concat(".xml"));
+				conv = dao.load(path.concat(usuario).concat(".xml"));
 			break;
 			case "TEXTO":
 				factory = new TextDAOFactory();
 				dao = factory.createConversacionDAO();
-				dao.load(path.concat(".txt"));
+				conv = dao.load(path.concat(usuario).concat(".txt"));
 			break;
 			case "JSON":
 				factory = new JSONDAOFactory();
 				dao = factory.createConversacionDAO();
-				conv = dao.load(path.concat(".json"));
+				conv = dao.load(path.concat(usuario).concat(".json"));
 			break;
 			}
 			return conv;

@@ -347,9 +347,13 @@ public class Controlador implements ActionListener{
 	}
 
 	public void actualizarVentanaPrincipal() {
-        nuevoMensaje();
-        cargarListaDeContactos();
-        cargarListaDeConversaciones();
+        SwingUtilities.invokeLater(() -> {
+			nuevoMensaje();
+			cargarListaDeContactos();
+			cargarListaDeConversaciones();
+		});
+        
+        System.out.println("Ventana principal actualizada con los contactos y conversaciones.");
 	}
 /*	
 	public void contactoAgregado(Contacto c) {

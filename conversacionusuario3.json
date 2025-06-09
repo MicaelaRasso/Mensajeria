@@ -1,0 +1,12 @@
+[
+  {
+    "contacto": "usuario4",
+    "notificacion": false,
+    "mensajes": [
+      {"emisor":"usuario3", "contenido":"hola", "fecha":"2025-06-08T21:58:44.442"},
+      {"emisor":"usuario3", "contenido":"todo bien", "fecha":"2025-06-08T21:58:48.440"},
+      {"emisor":"usuario4", "contenido":"si", "fecha":"2025-06-08T21:58:53.512"},
+      {"emisor":"usuario4", "contenido":"vos", "fecha":"2025-06-08T21:58:56.845"}
+    ]
+  }
+]

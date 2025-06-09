@@ -40,7 +40,7 @@ public class ConexionServidor implements Runnable {
      */
     public void start() {
         thread.start();
-        startPingLoop();
+        //startPingLoop();
     }
 
     /**
@@ -73,7 +73,7 @@ public class ConexionServidor implements Runnable {
     	
     	UsuarioDTO emisorDTO = new UsuarioDTO(sistema.getUsuario().getNombre());
     	UsuarioDTO receptorDTO = new UsuarioDTO(receptor);
-        send(new Paquete("enviarM",encriptacion.getEstrategia(), new MensajeDTO(emisorDTO, encriptacion.encriptar(texto), receptorDTO)));
+        send(new Paquete("enviarM", new MensajeDTO(emisorDTO, encriptacion.encriptar(texto), receptorDTO, encriptacion.getEstrategia())));
     }
 
     /**
@@ -130,7 +130,7 @@ public class ConexionServidor implements Runnable {
             while (running) {
                 try {
 
-                    send(new Paquete("ping",null, null));
+                    send(new Paquete("ping", null));
                     boolean pongRecibido = esperarPong(3000); 
 
                     if (!pongRecibido) {

@@ -39,23 +39,24 @@ public class Sistema {
     private ArrayList<Conversacion> conversaciones = new ArrayList<>();
     public Encriptacion encriptacion = new Encriptacion();
     public Persistencia persistencia = new Persistencia();
-    public String formatoPersistencia = "texto";
+    public String formatoPersistencia = ConfigLoader.persistencia;
 
     public Sistema(Usuario usuario, Controlador controlador) {
-    	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(formatoPersistencia);
+    	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(formatoPersistencia, usuario.getNombre());
         this.usuario = usuario;
         this.controlador = controlador;
         this.monitorHost = ConfigLoader.host;
         this.monitorPort = ConfigLoader.port;
+        this.encriptacion.establecerEstrategia("ecb");
         if(convs != null) {
-        	this.conversaciones = convs;
+        	cargarConversaciones(convs);
         }
         
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
         conexionMonitor.start();
-        
     }
+        
 	/**
      * Callback desde ConexionMonitor al recibir cualquier paquete.
      * Sólo procesa y delega acciones, no envía directamente.
@@ -92,12 +93,12 @@ public class Sistema {
     }
     
     private void actualizarUsuarioEnServidor() {
-        Paquete paqueteRegistro = new Paquete("actualizarSocket",null, new UsuarioDTO(usuario.getNombre()));
+        Paquete paqueteRegistro = new Paquete("actualizarSocket", new UsuarioDTO(usuario.getNombre()));
         conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
     private void registrarUsuarioEnServidor() {
-        Paquete paqueteRegistro = new Paquete("registrarU",null, new UsuarioDTO(usuario.getNombre()));
+        Paquete paqueteRegistro = new Paquete("registrarU", new UsuarioDTO(usuario.getNombre()));
         conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
@@ -152,7 +153,7 @@ public class Sistema {
 
     public void reintentarRegistro(String nuevoNombre) {
         this.usuario.setNombre(nuevoNombre);
-        Paquete paqueteRegistro = new Paquete("registrarU",null, new UsuarioDTO(nuevoNombre));
+        Paquete paqueteRegistro = new Paquete("registrarU", new UsuarioDTO(nuevoNombre));
         conexionServidor.registrarUsuario(paqueteRegistro);
     }
 
@@ -181,7 +182,7 @@ public class Sistema {
             conversaciones.add(conv);
         }
         conv.recibirMensaje(texto, fechahora, cont);
-        persistencia.guardarConversacion(conversaciones, formatoPersistencia);
+        persistencia.guardarConversacion(conversaciones, formatoPersistencia, usuario.getNombre());
         controlador.notificarMensaje(cont);
         
     }
@@ -194,7 +195,7 @@ public class Sistema {
             conexionServidor.enviarMensaje(contacto.getNombre(), texto);
             Conversacion conv = contacto.getConversacion();
             conv.agregarMensaje(texto, LocalDateTime.now(), usuario);
-            persistencia.guardarConversacion(conversaciones, formatoPersistencia);
+            persistencia.guardarConversacion(conversaciones, formatoPersistencia, usuario.getNombre());
         }
         else {
 			controlador.sinConexion("No se puede enviar el mensaje, no hay conexión al servidor.");
@@ -206,7 +207,7 @@ public class Sistema {
      */
     public void agregarContacto(String nombreContacto) {
         if (conexionServidor != null) {
-        	Paquete paquete = new Paquete("agregarC",null, new UsuarioDTO(nombreContacto));
+        	Paquete paquete = new Paquete("agregarC", new UsuarioDTO(nombreContacto));
             conexionServidor.agregarContacto(paquete);
         }
     }
@@ -245,12 +246,33 @@ public class Sistema {
 
 
 	public void desconectarUsuario() {
-		Paquete paquete = new Paquete("desconectarU",null, new UsuarioDTO(usuario.getNombre()));
+		Paquete paquete = new Paquete("desconectarU", new UsuarioDTO(usuario.getNombre()));
 		conexionServidor.desconectarUsuario(paquete);
 	}
 	
 	public ConexionMonitor getConexionMonitor() {
 		return conexionMonitor;
+	}
+
+	private void cargarConversaciones(ArrayList<Conversacion> convs) {
+	    for (Conversacion conv : convs) {
+	        Contacto contacto = conv.getContacto();
+	        agenda.put(contacto.getNombre(), contacto);  // Guardás el contacto en la agenda
+	        contacto.setConversacion(new Conversacion(contacto)); // Asegurás que tenga una conversación
+	        conversaciones.add(contacto.getConversacion()); // Agregás la conversación a la lista de conversaciones
+	        System.out.println("Cargando conversación con: " + contacto.getNombre());
+	        // Iterar sobre los mensajes de la conversación
+	        for (Mensaje mensaje : conv.getMensajes()) {
+	            if (mensaje.getEmisor().equals(usuario.getNombre())) {
+	                contacto.getConversacion().agregarMensaje(mensaje.getContenido(), mensaje.getFechaYHora(), usuario);
+	            } else {
+	                contacto.getConversacion().recibirMensaje(mensaje.getContenido(), mensaje.getFechaYHora(), contacto);
+	            }
+	            System.out.println("Mensaje de " + mensaje.getEmisor() + " a " + contacto.getNombre() + ": " + mensaje.getContenido());
+	        }
+	    }
+	    System.out.println("Conversaciones cargadas desde persistencia: " + conversaciones.size());
+	    controlador.actualizarVentanaPrincipal();
 	}
 
 	

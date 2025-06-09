@@ -23,12 +23,12 @@ public class Conversacion {
 
     public void recibirMensaje(String contenido, LocalDateTime fechaYHora, Contacto c) {
         mensajes.add(new Mensaje(c.getNombre(), contenido, fechaYHora));
-        System.out.println("Mensaje recibido de " + c.getNombre() + ": " + contenido);
+        //System.out.println("Mensaje recibido de " + c.getNombre() + ": " + contenido);
     }
 
     public void agregarMensaje(String mensaje, LocalDateTime fechaYHora, Usuario u) {
         mensajes.add(new Mensaje(u.getNombre(), mensaje, fechaYHora));
-        System.out.println("Mensaje enviado a " + u.getNombre() + ": " + mensaje);
+        //System.out.println("Mensaje enviado a " + u.getNombre() + ": " + mensaje);
     }
 
     // Getters
