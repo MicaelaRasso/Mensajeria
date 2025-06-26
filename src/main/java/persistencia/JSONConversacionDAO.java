@@ -15,7 +15,7 @@ import modelo.Mensaje;
 public class JSONConversacionDAO implements ConversacionDAO {
     @Override
     public void save(ArrayList<Conversacion> conversaciones, String path) throws IOException {
-        try (BufferedWriter w = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(path.concat(".json")))) {
             w.write("[\n");
             for (int i = 0; i < conversaciones.size(); i++) {
                 Conversacion conv = conversaciones.get(i);
@@ -41,11 +41,14 @@ public class JSONConversacionDAO implements ConversacionDAO {
     public ArrayList<Conversacion> load(String path) throws IOException {
         ArrayList<Conversacion> conversaciones = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
-        BufferedReader r = new BufferedReader(new FileReader(path));
+        BufferedReader r = new BufferedReader(new FileReader(path.concat(".json")));
         String line;
         while ((line = r.readLine()) != null) sb.append(line.trim());
         String json = sb.toString();
-        if (!json.startsWith("[") || !json.endsWith("]")) return conversaciones;
+        if (!json.startsWith("[") || !json.endsWith("]")) {
+        	r.close();
+        	return conversaciones;
+        }
         json = json.substring(1, json.length() - 1);
         String[] convs = json.split("\\},\\{");
         for (String item : convs) {
@@ -70,6 +73,7 @@ public class JSONConversacionDAO implements ConversacionDAO {
             }
             conversaciones.add(conv);
         }
+        r.close();
         return conversaciones;
     }
 }

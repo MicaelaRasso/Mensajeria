@@ -15,7 +15,7 @@ import modelo.Mensaje;
 public class TextConversacionDAO implements ConversacionDAO {
     @Override
     public void save(ArrayList<Conversacion> conversaciones, String path) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path.concat(".txt")))) {
             writer.write(Integer.toString(conversaciones.size()));
             writer.newLine();
             for (Conversacion conv : conversaciones) {
@@ -33,7 +33,7 @@ public class TextConversacionDAO implements ConversacionDAO {
     @Override
     public ArrayList<Conversacion> load(String path) throws IOException {
         ArrayList<Conversacion> conversaciones = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path.concat(".txt")))) {
             int convCount = Integer.parseInt(reader.readLine());
             for (int i = 0; i < convCount; i++) {
                 String nombre = reader.readLine();

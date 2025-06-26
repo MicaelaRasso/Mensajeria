@@ -40,7 +40,6 @@ public class ConexionServidor implements Runnable {
      */
     public void start() {
         thread.start();
-        //startPingLoop();
     }
 
     /**
@@ -114,6 +113,7 @@ public class ConexionServidor implements Runnable {
             }
         } catch (Exception e) {
         	System.err.println("Se cayó el canal de entrada del servidor");
+        	startPingLoop();
         }
     }
 
@@ -127,23 +127,26 @@ public class ConexionServidor implements Runnable {
 
     private void startPingLoop() {
         pingThread = new Thread(() -> {
+        	int i = 0;
             while (running) {
                 try {
 
                     send(new Paquete("ping", null));
                     boolean pongRecibido = esperarPong(3000); 
-
+                    
                     if (!pongRecibido) {
-                        System.err.println("No se recibió echo. El servidor está caído.");
+                        System.err.println("[Reintento " + (i+1) + "]No se recibió echo. El servidor está caído.");
                         sistema.reconectarConServidor();
                         stop();
                         break;
                     }
+                    i++;
                     Thread.sleep(5000); // Esperar antes del próximo ping
                 } catch (InterruptedException ignored) {
                     break;
                 }
             }
+            stop();
         }, "PingThread");
         pingThread.start();
     }

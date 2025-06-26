@@ -10,6 +10,7 @@ public class ConfigLoader {
 	    public static String persistencia;
 	    public static String iv;
 	    public static String path;
+	    public static String algo;
 
 	    static {
 	        try {
@@ -20,6 +21,7 @@ public class ConfigLoader {
 	            port = Integer.parseInt(props.getProperty("monitor.port"));
 	            path = props.getProperty("path");
 	            persistencia = props.getProperty("persistencia");
+	            algo = props.getProperty("algo");
 	            key = props.getProperty("key");
 	            iv = props.getProperty("iv");
 	        } catch (IOException e) {

@@ -10,58 +10,39 @@ public class Persistencia {
 	
 	DAOFactory factory;
 	ConversacionDAO dao;
-	private String path = ConfigLoader.path;
+	
 	
 	public Persistencia() {
 		factory = new TextDAOFactory();
 		dao = factory.createConversacionDAO();
+		switch(ConfigLoader.persistencia.toUpperCase()){
+		case "XML":
+			factory = new XMLDAOFactory();
+			dao = factory.createConversacionDAO();
+		break;
+		case "TEXTO":
+			factory = new TextDAOFactory();
+			dao = factory.createConversacionDAO();
+		break;
+		case "JSON":
+			factory = new JSONDAOFactory();
+			dao = factory.createConversacionDAO();
+		break;
+		}
 	}
 	
-	public void guardarConversacion(ArrayList<Conversacion> conv, String format, String usuario) {
+	public void guardarConversacion(ArrayList<Conversacion> conv, String usuario) {
 		try {
-			System.out.println("Guardando conversación en formato " + format);
-			switch(format.toUpperCase()){
-			case "XML":
-				factory = new XMLDAOFactory();
-				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(usuario).concat(".xml"));
-			break;
-			case "TEXTO":
-				factory = new TextDAOFactory();
-				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(usuario).concat(".txt"));
-			break;
-			case "JSON":
-				factory = new JSONDAOFactory();
-				dao = factory.createConversacionDAO();
-				dao.save(conv, path.concat(usuario).concat(".json"));
-			break;
-			}
+			dao.save(conv, ConfigLoader.path.concat(usuario));
 		}catch(IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public ArrayList<Conversacion> CargarConversacion(String format, String usuario) {
+	public ArrayList<Conversacion> CargarConversacion(String usuario) {
 		ArrayList<Conversacion> conv = null;
 		try {			
-			switch(format.toUpperCase()){
-			case "XML":
-				factory = new XMLDAOFactory();
-				dao = factory.createConversacionDAO();
-				conv = dao.load(path.concat(usuario).concat(".xml"));
-			break;
-			case "TEXTO":
-				factory = new TextDAOFactory();
-				dao = factory.createConversacionDAO();
-				conv = dao.load(path.concat(usuario).concat(".txt"));
-			break;
-			case "JSON":
-				factory = new JSONDAOFactory();
-				dao = factory.createConversacionDAO();
-				conv = dao.load(path.concat(usuario).concat(".json"));
-			break;
-			}
+			conv = dao.load(ConfigLoader.path.concat(usuario));
 			return conv;
 		}catch(IOException e) {
 			e.printStackTrace();

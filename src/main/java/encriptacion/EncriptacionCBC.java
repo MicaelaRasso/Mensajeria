@@ -33,7 +33,7 @@ public class EncriptacionCBC extends EncriptacionStrategy {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return "Error de encriptacion del emisor";
 	}
 
 	@Override
@@ -50,7 +50,7 @@ public class EncriptacionCBC extends EncriptacionStrategy {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return "Error de desencriptacion";
 	}
 	
 	public static SecretKey getSecretKeyFromString(String keyString) throws Exception {

@@ -15,7 +15,7 @@ import modelo.Mensaje;
 public class XMLConversacionDAO implements ConversacionDAO {
     @Override
     public void save(ArrayList<Conversacion> conversaciones, String path) throws IOException {
-        try (BufferedWriter w = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(path.concat(".xml")))) {
             w.write("<conversaciones>\n");
             for (Conversacion conv : conversaciones) {
                 w.write("  <conversacion>\n");
@@ -39,7 +39,7 @@ public class XMLConversacionDAO implements ConversacionDAO {
     @Override
     public ArrayList<Conversacion> load(String path) throws IOException {
         ArrayList<Conversacion> conversaciones = new ArrayList<>();
-        BufferedReader r = new BufferedReader(new FileReader(path));
+        BufferedReader r = new BufferedReader(new FileReader(path.concat(".xml")));
         String line;
         String nombre = "";
         boolean noti = false;

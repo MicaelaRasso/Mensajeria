@@ -39,15 +39,14 @@ public class Sistema {
     private ArrayList<Conversacion> conversaciones = new ArrayList<>();
     public Encriptacion encriptacion = new Encriptacion();
     public Persistencia persistencia = new Persistencia();
-    public String formatoPersistencia = ConfigLoader.persistencia;
 
     public Sistema(Usuario usuario, Controlador controlador) {
-    	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(formatoPersistencia, usuario.getNombre());
+    	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(usuario.getNombre());
         this.usuario = usuario;
         this.controlador = controlador;
         this.monitorHost = ConfigLoader.host;
         this.monitorPort = ConfigLoader.port;
-        this.encriptacion.establecerEstrategia("ecb");
+        this.encriptacion.establecerEstrategia(ConfigLoader.algo);
         if(convs != null) {
         	cargarConversaciones(convs);
         }
@@ -182,7 +181,7 @@ public class Sistema {
             conversaciones.add(conv);
         }
         conv.recibirMensaje(texto, fechahora, cont);
-        persistencia.guardarConversacion(conversaciones, formatoPersistencia, usuario.getNombre());
+        persistencia.guardarConversacion(conversaciones, usuario.getNombre());
         controlador.notificarMensaje(cont);
         
     }
@@ -195,7 +194,7 @@ public class Sistema {
             conexionServidor.enviarMensaje(contacto.getNombre(), texto);
             Conversacion conv = contacto.getConversacion();
             conv.agregarMensaje(texto, LocalDateTime.now(), usuario);
-            persistencia.guardarConversacion(conversaciones, formatoPersistencia, usuario.getNombre());
+            persistencia.guardarConversacion(conversaciones, usuario.getNombre());
         }
         else {
 			controlador.sinConexion("No se puede enviar el mensaje, no hay conexión al servidor.");
@@ -247,7 +246,9 @@ public class Sistema {
 
 	public void desconectarUsuario() {
 		Paquete paquete = new Paquete("desconectarU", new UsuarioDTO(usuario.getNombre()));
-		conexionServidor.desconectarUsuario(paquete);
+		if(conexionServidor != null) {			
+			conexionServidor.desconectarUsuario(paquete);
+		}
 	}
 	
 	public ConexionMonitor getConexionMonitor() {
