@@ -76,4 +76,40 @@ public class JSONConversacionDAO implements ConversacionDAO {
         r.close();
         return conversaciones;
     }
+
+    @Override
+    public void saveContactos(ArrayList<Contacto> contactos, String path) throws IOException {
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(path.concat(".json")))) {
+            w.write("[\n");
+            for (int i = 0; i < contactos.size(); i++) {
+                w.write("  {\"nombre\":\"" + contactos.get(i).getNombre() + "\"}");
+                if (i < contactos.size() - 1) w.write(",");
+                w.write("\n");
+            }
+            w.write("]");
+        }
+    }
+
+    @Override
+    public ArrayList<Contacto> loadContactos(String path) throws IOException {
+        ArrayList<Contacto> contactos = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        BufferedReader r = new BufferedReader(new FileReader(path.concat(".json")));
+        String line;
+        while ((line = r.readLine()) != null) sb.append(line.trim());
+        String json = sb.toString();
+        if (!json.startsWith("[") || !json.endsWith("]")) return contactos;
+        json = json.substring(1, json.length() - 1);
+        if (json.trim().isEmpty()) return contactos;
+        String[] items = json.split("\\},\\{");
+        for (String item : items) {
+            item = item.trim();
+            if (!item.startsWith("{")) item = "{" + item;
+            if (!item.endsWith("}")) item += "}";
+            String nombre = item.split("\"nombre\":\"")[1].split("\"")[0];
+            contactos.add(new Contacto(nombre));
+        }
+        return contactos;
+    }
+    
 }

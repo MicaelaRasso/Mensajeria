@@ -51,4 +51,29 @@ public class TextConversacionDAO implements ConversacionDAO {
         }
         return conversaciones;
     }
+    
+
+    @Override
+    public void saveContactos(ArrayList<Contacto> contactos, String path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path.concat(".txt")))) {
+            writer.write(Integer.toString(contactos.size()));
+            writer.newLine();
+            for (Contacto c : contactos) {
+                writer.write(c.getNombre());
+                writer.newLine();
+            }
+        }
+    }
+
+    @Override
+    public ArrayList<Contacto> loadContactos(String path) throws IOException {
+        ArrayList<Contacto> contactos = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(path.concat(".txt")))) {
+            int count = Integer.parseInt(reader.readLine());
+            for (int i = 0; i < count; i++) {
+                contactos.add(new Contacto(reader.readLine()));
+            }
+        }
+        return contactos;
+    }
 }

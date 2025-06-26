@@ -11,6 +11,7 @@ public class ConfigLoader {
 	    public static String iv;
 	    public static String path;
 	    public static String algo;
+	    public static String cpath;
 
 	    static {
 	        try {
@@ -20,6 +21,7 @@ public class ConfigLoader {
 	            host = props.getProperty("monitor.host");
 	            port = Integer.parseInt(props.getProperty("monitor.port"));
 	            path = props.getProperty("path");
+	            cpath = props.getProperty("cpath");
 	            persistencia = props.getProperty("persistencia");
 	            algo = props.getProperty("algo");
 	            key = props.getProperty("key");

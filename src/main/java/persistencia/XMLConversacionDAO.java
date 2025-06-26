@@ -33,6 +33,7 @@ public class XMLConversacionDAO implements ConversacionDAO {
                 w.write("  </conversacion>\n");
             }
             w.write("</conversaciones>");
+            w.close();
         }
     }
 
@@ -72,5 +73,33 @@ public class XMLConversacionDAO implements ConversacionDAO {
         }
         r.close();
         return conversaciones;
+    }
+    
+    @Override
+    public void saveContactos(ArrayList<Contacto> contactos, String path) throws IOException {
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(path.concat(".xml")))) {
+            w.write("<contactos>\n");
+            for (Contacto c : contactos) {
+                w.write("  <contacto>" + c.getNombre() + "</contacto>\n");
+            }
+            w.write("</contactos>");
+            w.close();
+        }
+    }
+
+    @Override
+    public ArrayList<Contacto> loadContactos(String path) throws IOException {
+        ArrayList<Contacto> contactos = new ArrayList<>();
+        BufferedReader r = new BufferedReader(new FileReader(path.concat(".xml")));
+        String line;
+        while ((line = r.readLine()) != null) {
+            line = line.trim();
+            if (line.startsWith("<contacto>")) {
+                String nombre = line.replace("<contacto>", "").replace("</contacto>", "");
+                contactos.add(new Contacto(nombre));
+            }
+        }
+        r.close();
+        return contactos;
     }
 }

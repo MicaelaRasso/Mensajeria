@@ -42,14 +42,19 @@ public class Sistema {
 
     public Sistema(Usuario usuario, Controlador controlador) {
     	ArrayList<Conversacion> convs = this.persistencia.CargarConversacion(usuario.getNombre());
+    	ArrayList<Contacto> contactos = this.persistencia.CargarContactos(usuario.getNombre());
         this.usuario = usuario;
         this.controlador = controlador;
         this.monitorHost = ConfigLoader.host;
         this.monitorPort = ConfigLoader.port;
         this.encriptacion.establecerEstrategia(ConfigLoader.algo);
+        if(contactos != null) {
+        	cargarContactos(contactos);
+        }
         if(convs != null) {
         	cargarConversaciones(convs);
         }
+        
         
         // Inicializa conexión con monitor (envía petición internamente)
         conexionMonitor = new ConexionMonitor(this, this.monitorHost, this.monitorPort);
@@ -124,6 +129,8 @@ public class Sistema {
 					UsuarioDTO usuarioDTO = (UsuarioDTO) paquete.getContenido();
 					Contacto nuevoContacto = new Contacto(usuarioDTO.getNombre());
 					agenda.put(nuevoContacto.getNombre(), nuevoContacto);
+					ArrayList<Contacto> lista = new ArrayList<>(agenda.values());
+					persistencia.guardarContactos(lista, usuario.getNombre());
 					resp = true;
 					mensaje = "Se ha agregado el contacto " + uDTO.getNombre();
 				}
@@ -173,6 +180,8 @@ public class Sistema {
         if (cont == null) {
 			cont = new Contacto(emisorDTO.getNombre());
 			agenda.put(cont.getNombre(), cont);
+			ArrayList<Contacto> lista = new ArrayList<>(agenda.values());
+			persistencia.guardarContactos(lista, usuario.getNombre());
 		}
         Conversacion conv = cont.getConversacion();
         if (conv == null) {
@@ -275,6 +284,12 @@ public class Sistema {
 	    System.out.println("Conversaciones cargadas desde persistencia: " + conversaciones.size());
 	    controlador.actualizarVentanaPrincipal();
 	}
-
+	
+	private void cargarContactos(ArrayList<Contacto> contactos) {
+		for (Contacto c : contactos) {
+    	    agenda.put(c.getNombre(), c);
+    	}
+		controlador.actualizarVentanaPrincipal();
+	}
 	
 }
