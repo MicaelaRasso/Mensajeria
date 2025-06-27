@@ -28,7 +28,7 @@ public class EncriptacionECB extends EncriptacionStrategy {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return "Error de encriptacion del emisor";
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class EncriptacionECB extends EncriptacionStrategy {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return "Error de desencriptacion";
 	}
 
 }

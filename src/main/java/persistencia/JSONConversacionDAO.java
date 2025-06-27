@@ -7,6 +7,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import modelo.Contacto;
 import modelo.Conversacion;
@@ -40,42 +43,98 @@ public class JSONConversacionDAO implements ConversacionDAO {
     @Override
     public ArrayList<Conversacion> load(String path) throws IOException {
         ArrayList<Conversacion> conversaciones = new ArrayList<>();
+
+        // 1) Leer todo el JSON en un String
         StringBuilder sb = new StringBuilder();
-        BufferedReader r = new BufferedReader(new FileReader(path.concat(".json")));
-        String line;
-        while ((line = r.readLine()) != null) sb.append(line.trim());
-        String json = sb.toString();
-        if (!json.startsWith("[") || !json.endsWith("]")) {
-        	r.close();
-        	return conversaciones;
+        try (BufferedReader r = new BufferedReader(new FileReader(path.concat(".json")))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                sb.append(line.trim());
+            }
         }
-        json = json.substring(1, json.length() - 1);
-        String[] convs = json.split("\\},\\{");
-        for (String item : convs) {
-            item = item.trim();
-            if (!item.startsWith("{")) item = "{" + item;
-            if (!item.endsWith("}")) item = item + "}";
-            String nombre = item.split("\\\"contacto\\\":\\\"")[1].split("\\\"")[0];
-            boolean noti = Boolean.parseBoolean(item.split("\\\"notificacion\\\":")[1].split(",")[0]);
-            String array = item.split("\\\"mensajes\\\":\\[")[1].split("]")[0];
+        String json = sb.toString();
+
+        // 2) Validar formato de array JSON
+        if (!json.startsWith("[") || !json.endsWith("]")) {
+            return conversaciones;
+        }
+        json = json.substring(1, json.length() - 1);  // quitar corchetes externos
+
+        // 3) Extraer cada objeto de nivel 1 contando llaves
+        List<String> items = new ArrayList<>();
+        int depth = 0, start = -1;
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '{') {
+                if (depth == 0) start = i;
+                depth++;
+            }
+            if (c == '}') {
+                depth--;
+                if (depth == 0 && start != -1) {
+                    items.add(json.substring(start, i + 1));
+                    start = -1;
+                }
+            }
+        }
+
+        // 4) Prepara los patrones
+        Pattern pContacto = Pattern.compile("\"contacto\"\\s*:\\s*\"([^\"]+)\"");
+        Pattern pNoti     = Pattern.compile("\"notificacion\"\\s*:\\s*(true|false)");
+        Pattern pMensajes = Pattern.compile("\"mensajes\"\\s*:\\s*\\[(.*)\\]");
+        Pattern pMsg      = Pattern.compile("\\{\\s*\"emisor\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"contenido\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"fecha\"\\s*:\\s*\"([^\"]+)\"\\s*\\}");
+
+        // 5) Parsea cada conversación
+        for (String item : items) {
+            Matcher m;
+
+            // contacto
+            m = pContacto.matcher(item);
+            if (!m.find()) {
+                System.err.println("⚠️ Falta o mal 'contacto' en: " + item);
+                continue;
+            }
+            String nombre = m.group(1);
+
+            // notificacion
+            m = pNoti.matcher(item);
+            if (!m.find()) {
+                System.err.println("⚠️ Falta o mal 'notificacion' en: " + item);
+                continue;
+            }
+            boolean noti = Boolean.parseBoolean(m.group(1));
+
+            // array de mensajes (todo el bloque interior)
+            m = pMensajes.matcher(item);
+            if (!m.find()) {
+                System.err.println("⚠️ Falta o mal 'mensajes' en: " + item);
+                continue;
+            }
+            String mensajesBlock = m.group(1);
+
+            // Construir Conversacion
             Contacto c = new Contacto(nombre);
             Conversacion conv = new Conversacion(c);
             conv.setNotificacion(noti);
-            if (!array.trim().isEmpty()) {
-                String[] messages = array.split("\\},");
-                for (String msg : messages) {
-                    if (!msg.endsWith("}")) msg += "}";
-                    String em = msg.split("\\\"emisor\\\":\\\"")[1].split("\\\"")[0];
-                    String cont = msg.split("\\\"contenido\\\":\\\"")[1].split("\\\"")[0];
-                    String fe = msg.split("\\\"fecha\\\":\\\"")[1].split("\\\"")[0];
-                    conv.recibirMensaje(cont, LocalDateTime.parse(fe), new Contacto(em));
-                }
+
+            // extraer cada mensaje individual
+            Matcher mm = pMsg.matcher(mensajesBlock);
+            while (mm.find()) {
+                String em = mm.group(1);
+                String cont = mm.group(2);
+                String fe = mm.group(3);
+                conv.recibirMensaje(cont, LocalDateTime.parse(fe), new Contacto(em));
             }
+
             conversaciones.add(conv);
         }
-        r.close();
+
         return conversaciones;
     }
+
+
+
+
 
     @Override
     public void saveContactos(ArrayList<Contacto> contactos, String path) throws IOException {

@@ -32,7 +32,7 @@ public class Sistema {
     // Módulos de conexión, autogestionan hilos y envíos
     private ConexionMonitor conexionMonitor;
     private ConexionServidor conexionServidor;
-    private boolean primerRegistro = true;
+   // private boolean primerRegistro = true;
 
     // Estado de la aplicación
     private HashMap<String, Contacto> agenda = new HashMap<>();
@@ -73,14 +73,14 @@ public class Sistema {
                 this.serverPort = dto.getPuerto();
                 this.serverHost = dto.getAddress();
                 System.out.println(serverHost + ":" + serverPort);
-
-                if(primerRegistro) {
-                	reiniciarConexionServidor();
-                    registrarUsuarioEnServidor();
-                    primerRegistro = false;
-                }else
-                	reiniciarConexionServidor();
-                	actualizarUsuarioEnServidor(); //Necesario para actualizar el socket del cliente en el servidor nuevo
+                reiniciarConexionServidor();
+                try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} // Espera para asegurar que la conexión se establezca
+                registrarUsuarioEnServidor();  
             } else {
                 controlador.sinConexion("No hay servidores disponibles en este momento");
             }
@@ -96,10 +96,10 @@ public class Sistema {
         //registrarUsuarioEnServidor(); //PROBAR SI FUNCIONA PARA LA RECONEXION, NO LO CHEQUEE
     }
     
-    private void actualizarUsuarioEnServidor() {
+    /*private void actualizarUsuarioEnServidor() {
         Paquete paqueteRegistro = new Paquete("actualizarSocket", new UsuarioDTO(usuario.getNombre()));
         conexionServidor.registrarUsuario(paqueteRegistro);
-    }
+    }*/
 
     private void registrarUsuarioEnServidor() {
         Paquete paqueteRegistro = new Paquete("registrarU", new UsuarioDTO(usuario.getNombre()));
